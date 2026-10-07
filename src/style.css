@@ -21,3 +21,5 @@
 .element-guide>div>.ui-icon{width:15px;height:15px}.element-guide b{display:inline-flex;margin:0}.element-guide b .ui-icon{width:10px;height:10px}
 .hp-track b .ui-icon{width:10px;height:10px;vertical-align:-1px}.report-heading .ui-icon{width:14px;height:14px}
 .trophy{display:inline-flex;color:#bd9a51}.results .trophy .ui-icon{width:52px;height:52px}
+
+.card-bottom .card-stat{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
