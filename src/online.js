@@ -1,0 +1,6 @@
+export class Online{
+ constructor(onEvent){this.onEvent=onEvent;this.ws=null;this.session=JSON.parse(sessionStorage.getItem('pca-session')||'null');this.retry=null;this.intentional=false;}
+ connect(){this.intentional=false;return new Promise((resolve,reject)=>{const ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws`);this.ws=ws;ws.onopen=()=>resolve();ws.onerror=()=>reject(Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาเปิด npm run dev'));ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='session'){this.session=m;sessionStorage.setItem('pca-session',JSON.stringify(m));}if(m.type==='left'){this.session=null;sessionStorage.removeItem('pca-session');}this.onEvent(m);};ws.onclose=()=>{this.onEvent({type:'disconnected'});if(!this.intentional&&this.session){this.retry=setTimeout(()=>this.connect().then(()=>this.send({type:'resume',...this.session,type:'resume'})).catch(()=>{}),1500);}};});}
+ send(m){if(this.ws?.readyState!==WebSocket.OPEN)throw Error('ยังไม่ได้เชื่อมต่อเซิร์ฟเวอร์');this.ws.send(JSON.stringify(m));}
+ leave(){this.intentional=true;clearTimeout(this.retry);if(this.ws?.readyState===WebSocket.OPEN&&this.session)this.send({type:'leave'});this.session=null;sessionStorage.removeItem('pca-session');this.ws?.close();}
+}

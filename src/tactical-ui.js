@@ -1,0 +1,20 @@
+import {icon} from './icons.js';
+import {byId,statuses} from './cards.js';
+import {active,intentDescription} from './engine.js';
+import {tactics,combos,comboFor} from './tactics.js';
+const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function tacticalIntentHTML(state,you,mode){
+ const foe=active(state,1-you);
+ return mode==='bot'?`<div class="bot-intent"><span>${icon('eye')} เจตนาบอต</span><strong>${intentDescription(state,1-you)}</strong><small>บอตยึดแผนนี้ • สตัน/หมดสภาพอาจทำให้แผนถูกยกเลิก</small></div>`:foe.charging?`<div class="bot-intent warning"><span>${icon('charge')} คู่ต่อสู้กำลังชาร์จ</span><strong>เลือกตั้งรับ สตัน หรือสลับตัวรับการโจมตี</strong></div>`:'';
+}
+export function tacticalHUDHTML(state,you){
+ const own=active(state,you),foe=active(state,1-you),c=byId(own.id),combo=comboFor(c,foe);
+ let advice='สลับโดยสมัครใจเพื่อใช้เอฟเฟกต์เข้าสนาม • เลือกจังหวะให้คุ้ม 3 ครั้ง';
+ if(combo)advice=`${icon('combo')} พร้อมคอมโบ ${combo.name}: โจมตี ×1.5 และใช้ ${statuses[combo.mark][1]} หมด`;
+ else if(own.charging)advice=`${icon('charge')} ชาร์จพร้อมแล้ว • กดปล่อยพลังฟรี หรือเลือกแอ็กชันอื่นเพื่อยกเลิก`;
+ else {const setup=combos.find(k=>foe.status[k.mark]);if(setup){const ally=state.players[you].team.find(u=>u.hp>0&&byId(u.id).element===setup.element);advice=ally?`${icon('switch')} ${byId(ally.id).name} ต่อ ${setup.name} ได้ • ระวังอายุ ${statuses[setup.mark][1]}`:`เป้าหมายมี ${statuses[setup.mark][1]} • เลือกทีม ${setup.element==='fire'?'ไฟ':'ลม'} เพื่อต่อคอมโบ`;}}
+ return `<div class="tactical-tip ${combo?'combo-ready':''}">${advice}</div>`;
+}
+export function specialButtonHTML(unit){const c=byId(unit.id);return `${unit.charging?icon('charge'):icon('sparkle')}<strong>${unit.charging?'ปล่อย ':c.special.charge?'ชาร์จ ':''}${c.special.name}</strong><small>${unit.charging?'ฟรี • จ่ายพลังงานแล้ว':unit.cooldown?`คูลดาวน์ ${unit.cooldown} เทิร์น`:c.special.charge?`${icon('energy')} 3 • เตรียม 1 เทิร์น`:`${icon('energy')} 3 • ท่าพิเศษ`}</small>`;}
+export function cardTacticsHTML(c){const mark=tactics[c.id].basicMark;return `<div class="card-tactics"><strong>${icon('switch')} เข้าสนาม: ${c.entry.name}</strong><p>${c.entry.description}<br>ทำงานเฉพาะสลับโดยสมัครใจ • ใช้เทิร์นและโควตา</p>${mark?`<strong>โจมตีสร้าง ${statuses[mark][1]}</strong><p>${mark==='wet'?`ให้ตัวลมต่อคอมโบ ×1.5`:`ให้ตัวไฟต่อคอมโบ ×1.5`} • 3 เทิร์นของเป้าหมาย</p>`:''}<strong>${icon('sparkle')} จังหวะท่าพิเศษ</strong><p>${c.special.description}</p></div>`;}
+export function tacticsHelpHTML(){return `<h2>วางแผนให้เหนือกว่า</h2><p class="tactics-intro">ทุกเทิร์นยังเลือกได้หนึ่งแอ็กชัน แต่เตรียมคอมโบและรับมือแผนคู่ต่อสู้ได้</p><section class="help-rule"><strong>${icon('eye')} อ่านเจตนาบอต</strong><p>แผนถูกกำหนดก่อนคุณเลือกแอ็กชัน บอตไม่เปลี่ยนแผนเพื่อหลบการตัดสินใจของคุณ หากถูกสตันหรือหมดสภาพ แผนจะหยุดตามกติกา</p></section>${combos.map(c=>`<section class="help-rule"><strong>${icon('combo')} ${c.name}</strong><p>${c.description}<br>${c.mark==='wet'?'บับเบิลบัน/มิสตี้โจมตีสร้างเปียก':'มอสซี่โจมตีสร้างรากยึด'} • สถานะอยู่ 3 เทิร์นของเป้าหมาย รวมขณะสำรอง รากยึดเป็นเครื่องหมายคอมโบ ไม่ห้ามสลับตัว</p></section>`).join('')}<section class="help-rule"><strong>${icon('charge')} ชาร์จและขัดจังหวะ</strong><p>หางเพลิงจ่าย 3 พลังงานเพื่อชาร์จ ใช้เทิร์นถัดไปกดปล่อยฟรี ความแรง 240% + เผาไหม้ สตันขัดจังหวะทันที แอ็กชันอื่นยกเลิกและไม่คืนพลังงาน คูลดาวน์ 2 เทิร์นหลังปล่อย</p></section><section class="help-rule"><strong>${icon('shield')} ตั้งรับมีรางวัล</strong><p>ลดการโจมตีครั้งถัดไป 50% และเมื่อรับการโจมตีสำเร็จได้พลังงานคืน 1 หน่วย สูงสุด 6 พิษ/เผาไหม้ไม่ให้รางวัลนี้</p></section><section class="help-rule"><strong>${icon('switch')} เลือกจังหวะสลับ</strong><p>สลับโดยสมัครใจ 3 ครั้งต่อแมตช์ ใช้หนึ่งเทิร์นพร้อมเอฟเฟกต์เข้าสนาม ตัวเริ่มต้นและการเปลี่ยนฟรีเมื่อหมดสภาพไม่เปิดเอฟเฟกต์</p></section><div class="entry-guide">${Object.entries(tactics).map(([id,t])=>`<div><img src="${byId(id).image}" alt="${byId(id).name}"><p><strong>${byId(id).name} • ${t.entry.name}</strong><span>${escape(t.entry.description)}</span></p></div>`).join('')}</div>`;}
